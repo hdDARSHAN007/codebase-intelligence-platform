@@ -1,29 +1,31 @@
-from app.retrieval.search import vector_search
-from app.retrieval.keyword_search import keyword_search
-from app.retrieval.query_analyzer import analyze_query
-from app.retrieval.hybrid_search import _chunk_key, RRF_K, CANDIDATE_POOL
+from app.ingestion.parser import parse_file
+from app.ingestion.chunker import extract_chunks
 
-question = "how does Flask register a URL route?"
-repo = "pallets/flask"
+code = """
+public class Calculator {
+    private int total;
 
-analysis = analyze_query(question)
-vector_results = vector_search(question, limit=analysis["vector_pool"], repo=repo)
-keyword_results = keyword_search(question, repo=repo, limit=analysis["keyword_pool"])
+    public Calculator() {
+        this.total = 0;
+    }
 
-fused_scores = {}
-chunk_data = {}
-for rank, r in enumerate(vector_results):
-    key = _chunk_key(r)
-    fused_scores[key] = fused_scores.get(key, 0) + 1 / (RRF_K + rank)
-    chunk_data[key] = r
-for rank, r in enumerate(keyword_results):
-    key = _chunk_key(r)
-    fused_scores[key] = fused_scores.get(key, 0) + 1 / (RRF_K + rank)
-    chunk_data[key] = r
+    public int add(int a, int b) {
+        return a + b;
+    }
 
-candidate_keys = sorted(fused_scores, key=lambda k: fused_scores[k], reverse=True)[:CANDIDATE_POOL]
+    interface Operation {
+        int apply(int x, int y);
+    }
+}
+"""
 
-print(f"Candidates going into reranking ({len(candidate_keys)}):")
-for k in candidate_keys:
-    r = chunk_data[k]
-    print(f'  {r["symbol"]} ({r["type"]}) - {r["file"]} lines {r["lines"]}')
+with open("test_java_sample.java", "w") as f:
+    f.write(code)
+
+result = parse_file("test_java_sample.java", "java")
+if result:
+    tree, source_bytes = result
+    chunks = extract_chunks(tree, source_bytes, "test_java_sample.java", "java")
+    print(f"Found {len(chunks)} chunks\n")
+    for c in chunks:
+        print(f"[{c.symbol_type}] {c.symbol_name}  parent_class={c.parent_class}  (lines {c.start_line}-{c.end_line})")

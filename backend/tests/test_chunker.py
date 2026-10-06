@@ -6,7 +6,7 @@ import os
 
 def _chunk_source(code: str, language: str, filename: str):
     """Writes code to a temp file, parses it, and returns its chunks."""
-    suffix = {"python": ".py", "javascript": ".js", "typescript": ".ts"}[language]
+    suffix = {"python": ".py", "javascript": ".js", "typescript": ".ts", "java": ".java"}[language]
     fd, path = tempfile.mkstemp(suffix=suffix)
     try:
         with os.fdopen(fd, "w") as f:
@@ -90,3 +90,27 @@ test('adds numbers', () => {
     chunks = _chunk_source(code, "javascript", "test.js")
     names = [c.symbol_name for c in chunks]
     assert "adds numbers" in names
+
+def test_java_constructor_and_interface():
+    code = '''
+    public class Calculator {
+        public Calculator() {}
+        public int add(int a, int b) { return a + b; }
+        interface Operation {
+            int apply(int x, int y);
+        }
+    }
+    '''
+    chunks = _chunk_source(code, "java", "calc.java")
+
+    calculator_class = next(c for c in chunks if c.symbol_name == "Calculator" and c.symbol_type == "class")
+    constructor = next(c for c in chunks if c.symbol_name == "Calculator" and c.symbol_type == "method")
+    add_method = next(c for c in chunks if c.symbol_name == "add")
+    operation = next(c for c in chunks if c.symbol_name == "Operation")
+    apply_method = next(c for c in chunks if c.symbol_name == "apply")
+
+    assert calculator_class.parent_class is None
+    assert constructor.parent_class == "Calculator"
+    assert add_method.parent_class == "Calculator"
+    assert operation.symbol_type == "class"
+    assert apply_method.parent_class == "Operation"

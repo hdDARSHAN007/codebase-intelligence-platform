@@ -78,94 +78,128 @@ export default function Home() {
   }
 
   return (
-    <main style={{ maxWidth: 800, margin: "40px auto", padding: "0 16px", fontFamily: "sans-serif" }}>
-      <h1>Codebase Intelligence</h1>
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="max-w-3xl mx-auto px-6 py-12">
+        <header className="mb-10">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Codebase Intelligence
+          </h1>
+          <p className="mt-2 text-slate-500">
+            Ask natural-language questions about any public GitHub repository.
+          </p>
+        </header>
 
-      <section style={{ marginBottom: 32 }}>
-        <h2>1. Ingest a repository</h2>
-        <input
-          style={{ width: "100%", padding: 8, marginBottom: 8, boxSizing: "border-box" }}
-          placeholder="https://github.com/pallets/flask"
-          value={repoUrl}
-          onChange={(e) => setRepoUrl(e.target.value)}
-          disabled={ingesting}
-        />
-        <button onClick={handleIngest} disabled={ingesting || !repoUrl}>
-          {ingesting && <Spinner />} {ingesting ? "Ingesting..." : "Ingest"}
-        </button>
-        {ingestStatus && (
-          <p style={{ color: ingestError ? "#b00020" : "#333" }}>{ingestStatus}</p>
-        )}
-
-        {knownRepos.length > 0 && (
-          <div style={{ marginTop: 12 }}>
-            <label>Active repo: </label>
-            <select value={repo} onChange={(e) => setRepo(e.target.value)} disabled={ingesting}>
-              {knownRepos.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
+        <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-4">
+            1. Ingest a repository
+          </h2>
+          <div className="flex gap-2">
+            <input
+              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-slate-100"
+              placeholder="https://github.com/pallets/flask"
+              value={repoUrl}
+              onChange={(e) => setRepoUrl(e.target.value)}
+              disabled={ingesting}
+            />
+            <button
+              onClick={handleIngest}
+              disabled={ingesting || !repoUrl}
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
+            >
+              {ingesting && <Spinner />}
+              {ingesting ? "Ingesting..." : "Ingest"}
+            </button>
           </div>
-        )}
-      </section>
 
-      <section>
-        <h2>2. Ask a question</h2>
-        {!repo && <p style={{ color: "#888" }}>Ingest a repository first.</p>}
-        <input
-          style={{ width: "100%", padding: 8, marginBottom: 8, boxSizing: "border-box" }}
-          placeholder="How does this project handle authentication?"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          disabled={!repo || asking}
-        />
-        <button onClick={handleAsk} disabled={asking || !repo || !question}>
-          {asking && <Spinner />} {asking ? "Thinking..." : "Ask"}
-        </button>
+          {ingestStatus && (
+            <p className={`mt-3 text-sm ${ingestError ? "text-red-600" : "text-slate-600"}`}>
+              {ingestStatus}
+            </p>
+          )}
 
-        {answer && (
-          <div
-            style={{
-              marginTop: 16,
-              whiteSpace: "pre-wrap",
-              lineHeight: 1.5,
-              color: askError ? "#b00020" : "#000",
-            }}
-          >
-            {answer}
+          {knownRepos.length > 0 && (
+            <div className="mt-4 flex items-center gap-2">
+              <label className="text-sm text-slate-500">Active repo:</label>
+              <select
+                value={repo}
+                onChange={(e) => setRepo(e.target.value)}
+                disabled={ingesting}
+                className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                {knownRepos.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </section>
+
+        <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-4">
+            2. Ask a question
+          </h2>
+
+          {!repo && (
+            <p className="text-sm text-slate-400 mb-3">Ingest a repository first.</p>
+          )}
+
+          <div className="flex gap-2">
+            <input
+              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-slate-100"
+              placeholder="How does this project handle authentication?"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              disabled={!repo || asking}
+            />
+            <button
+              onClick={handleAsk}
+              disabled={asking || !repo || !question}
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed transition-colors"
+            >
+              {asking && <Spinner />}
+              {asking ? "Thinking..." : "Ask"}
+            </button>
           </div>
-        )}
 
-        {sources.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <h3>Sources</h3>
-            <ul>
-              {sources.map((s) => (
-                <li key={s.ref}>
-                  [{s.ref}] {s.symbol} — {s.file} (lines {s.lines})
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </section>
+          {answer && (
+            <div
+              className={`mt-5 whitespace-pre-wrap text-sm leading-relaxed rounded-lg p-4 ${
+                askError ? "bg-red-50 text-red-700" : "bg-slate-50 text-slate-800"
+              }`}
+            >
+              {answer}
+            </div>
+          )}
+
+          {sources.length > 0 && (
+            <div className="mt-5">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                Sources
+              </h3>
+              <ul className="space-y-1.5">
+                {sources.map((s) => (
+                  <li
+                    key={s.ref}
+                    className="text-sm text-slate-600 bg-slate-50 rounded-md px-3 py-2 border border-slate-200"
+                  >
+                    <span className="font-mono text-indigo-600">[{s.ref}]</span>{" "}
+                    <span className="font-medium">{s.symbol}</span>
+                    <span className="text-slate-400"> — {s.file} (lines {s.lines})</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      </div>
     </main>
   );
 }
 
 function Spinner() {
   return (
-    <span
-      style={{
-        display: "inline-block",
-        width: 10,
-        height: 10,
-        border: "2px solid #999",
-        borderTopColor: "transparent",
-        borderRadius: "50%",
-        animation: "spin 0.6s linear infinite",
-        marginRight: 6,
-      }}
-    />
+    <span className="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
   );
 }

@@ -17,7 +17,12 @@ CHUNK_NODE_TYPES = {
     "python": {"function_definition", "class_definition"},
     "javascript": {"function_declaration", "class_declaration", "method_definition", "variable_declarator"},
     "typescript": {"function_declaration", "class_declaration", "method_definition", "variable_declarator"},
+    "java": {"method_declaration", "class_declaration", "interface_declaration", "constructor_declaration"},
 }
+
+# Node types that count as a "class"-like container whose children we
+# should keep recursing into (to find methods inside them).
+CLASS_LIKE_TYPES = {"class_definition", "class_declaration", "interface_declaration"}
 
 def get_node_text(node, source_bytes: bytes) -> str:
     return source_bytes[node.start_byte:node.end_byte].decode("utf-8", errors="replace")
@@ -106,15 +111,20 @@ def extract_chunks(tree, source_bytes: bytes, file_path: str, language: str) -> 
 
     def walk(node, parent_class: str | None = None):
         for child in node.children:
-            is_plain_chunk_type = child.type in ("function_declaration", "class_declaration", "method_definition", "function_definition", "class_definition")
+            is_plain_chunk_type = child.type in (
+                "function_declaration", "class_declaration", "method_definition",
+                "function_definition", "class_definition",
+                "method_declaration", "interface_declaration", "constructor_declaration",
+            )
             is_named_function_var = is_function_value_declarator(child)
             call_with_fn = find_call_with_function_arg(child) if child.type == "call_expression" else None
 
             if is_plain_chunk_type or is_named_function_var:
                 name = get_symbol_name(child, source_bytes) or "<anonymous>"
                 chunk_node = get_chunk_node(child)
+                is_class_like = child.type in CLASS_LIKE_TYPES
 
-                if "class" in child.type:
+                if is_class_like:
                     symbol_type = "class"
                     chunk_parent = None
                     recurse_parent = name
@@ -139,7 +149,7 @@ def extract_chunks(tree, source_bytes: bytes, file_path: str, language: str) -> 
                     imports=imports,
                 ))
 
-                if "class" in child.type:
+                if is_class_like:
                     walk(child, parent_class=recurse_parent)
 
             elif call_with_fn is not None:

@@ -2,12 +2,14 @@ from tree_sitter import Language, Parser
 import tree_sitter_python as tspython
 import tree_sitter_javascript as tsjavascript
 import tree_sitter_typescript as tstypescript
+import tree_sitter_java as tsjava
 
 # Build Language objects once, reuse across all parsing calls
 LANGUAGES = {
     "python": Language(tspython.language()),
     "javascript": Language(tsjavascript.language()),
     "typescript": Language(tstypescript.language_typescript()),
+    "java": Language(tsjava.language()),
 }
 
 _parsers: dict[str, Parser] = {}
