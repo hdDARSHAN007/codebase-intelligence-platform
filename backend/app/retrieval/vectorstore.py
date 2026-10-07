@@ -1,9 +1,13 @@
+import os
 import hashlib
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance, VectorParams, PointStruct,
     Filter, FieldCondition, MatchValue, FilterSelector,
 )
+from dotenv import load_dotenv
+
+load_dotenv()
 
 COLLECTION_NAME = "code_chunks"
 EMBEDDING_DIM = 1536  # gemini-embedding-001 with output_dimensionality=1536
@@ -13,11 +17,20 @@ _client = None
 def get_client() -> QdrantClient:
     global _client
     if _client is None:
-        _client = QdrantClient(host="localhost", port=6333)
+        qdrant_url = os.getenv("QDRANT_URL")
+        qdrant_api_key = os.getenv("QDRANT_API_KEY")
+
+        if qdrant_url:
+            # Qdrant Cloud (deployed)
+            _client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key)
+        else:
+            # Local Docker (fallback, e.g. for quick local testing)
+            _client = QdrantClient(host="localhost", port=6333)
     return _client
 
 def ensure_collection():
-    """Creates the code_chunks collection if it doesn't exist yet."""
+    """Creates the code_chunks collection if it doesn't exist yet, and
+    makes sure the 'repo' field has an index so it can be filtered on."""
     client = get_client()
     existing = [c.name for c in client.get_collections().collections]
 
@@ -26,6 +39,12 @@ def ensure_collection():
             collection_name=COLLECTION_NAME,
             vectors_config=VectorParams(size=EMBEDDING_DIM, distance=Distance.COSINE),
         )
+
+    client.create_payload_index(
+        collection_name=COLLECTION_NAME,
+        field_name="repo",
+        field_schema="keyword",
+    )
 
 def chunk_to_point_id(repo_name: str, chunk) -> str:
     """
